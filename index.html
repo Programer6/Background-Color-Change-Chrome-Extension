@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background Color Changer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Background Color Changer</h1>
+    <div class="color-picker-container">
+      <label for="color-picker">Select a Color:</label>
+      <input type="color" id="color-picker" value="#ffffff">
+    </div>
+    <div class="button-container">
+      <button id="change-background" class="btn primary-btn">Change Background</button>
+      <button id="save-favorite" class="btn secondary-btn">Save to Favorites</button>
+    </div>
+    <div class="favorites-container">
+      <h2>Favorites</h2>
+      <ul id="favorites-list"></ul>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
