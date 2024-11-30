@@ -3,16 +3,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const changeBackgroundButton = document.getElementById("change-background");
   const saveFavoriteButton = document.getElementById("save-favorite");
   const favoritesList = document.getElementById("favorites-list");
+  const subdomainToggle = document.getElementById("subdomain-toggle");
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const currentDomain = new URL(tab.url).hostname;
 
-  chrome.storage.local.get("favorites", (result) => {
+  // Load favorites and subdomain mode from storage
+  chrome.storage.local.get(["favorites", "appliedDomains"], (result) => {
     renderFavorites(result.favorites || []);
+    subdomainToggle.checked = result.appliedDomains?.[currentDomain] ? true : false;
+  });
+
+  subdomainToggle.addEventListener("change", () => {
+    toggleDomainColor(currentDomain, colorPicker.value);
   });
 
   changeBackgroundButton.addEventListener("click", () => {
     const selectedColor = colorPicker.value;
-    applyBackground(tab.id, selectedColor);
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (color) => {
+        document.body.style.backgroundColor = color;
+      },
+      args: [selectedColor],
+    });
+    if (subdomainToggle.checked) {
+      toggleDomainColor(currentDomain, selectedColor);
+    }
   });
 
   saveFavoriteButton.addEventListener("click", () => {
@@ -32,17 +49,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       deleteFavorite(event.target.dataset.color);
     } else if (event.target.tagName === "LI") {
       const color = event.target.style.backgroundColor;
-      applyBackground(tab.id, color);
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (color) => {
+          document.body.style.backgroundColor = color;
+        },
+        args: [color],
+      });
     }
   });
-
-  function applyBackground(tabId, color) {
-    chrome.scripting.executeScript({
-      target: { tabId },
-      func: (color) => (document.body.style.backgroundColor = color),
-      args: [color],
-    });
-  }
 
   function renderFavorites(favorites) {
     favoritesList.innerHTML = "";
@@ -61,4 +76,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderFavorites(updatedFavorites);
     });
   }
+
+  function toggleDomainColor(domain, color) {
+    chrome.storage.local.get("appliedDomains", (result) => {
+      const appliedDomains = result.appliedDomains || {};
+      if (subdomainToggle.checked) {
+        appliedDomains[domain] = color;
+      } else {
+        delete appliedDomains[domain];
+      }
+      chrome.storage.local.set({ appliedDomains });
+    });
+  }
 });
+
